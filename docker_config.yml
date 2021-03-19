@@ -1,0 +1,55 @@
+---
+- name: Playbook for Docker Config
+  hosts: DockerNode
+  become: yes
+  gather_facts: false
+  tasks:
+          - name: config yum repo for docker package
+            yum_repository:
+                   name: docker
+                   description: docker repo
+                   baseurl: https://download.docker.com/linux/centos/7/x86_64/stable/
+                   gpgcheck: no
+
+          - name: Install docker package
+            command: yum install -y docker-ce --nobest
+
+          - name: available docker dependancy
+            pip:
+                    name: docker
+
+          - name: start docker service
+            service:
+                    name: docker
+                    state: started
+
+          - name: directory for webpage
+            file:
+                    name: "/etc/docker_page"
+                    state: directory
+
+          - name: installing webpage
+            copy:
+                    content: "This page from docker"
+                    dest: "/etc/docker_page/index.html"
+
+          - name: Container present and Exposed
+            docker_container:
+                    name: byansible
+                    state: started
+                    image: httpd:latest
+                    ports:
+                            - "8081:80"
+                    volumes:
+                            - "/etc/docker_page:/usr/local/apache2/htdocs"
+
+          - name: Testing webserver
+            uri:
+                    url: http://192.168.29.186:8081/index.html
+                    return_content: yes
+                    status_code: 200
+            register: data
+
+          - name: WebApp
+            debug:
+                  msg: "{{  data['content']  }}"                                                                                                              55,1          Bot
